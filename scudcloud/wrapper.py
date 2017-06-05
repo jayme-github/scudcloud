@@ -2,7 +2,7 @@ from scudcloud.browser import Browser
 from scudcloud.downloader import Downloader
 from scudcloud.resources import Resources
 
-import sys, subprocess, os, json
+import sys, subprocess, os, json, datetime
 from urllib.parse import parse_qs, urlparse, urlsplit
 
 from PyQt5 import QtWebKit, QtGui, QtCore, QtWidgets
@@ -33,12 +33,16 @@ class Wrapper(QWebView):
         page.setNetworkAccessManager(window.networkAccessManager)
         self.setPage(page)
         self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+        self.page().networkAccessManager().networkAccessibleChanged.connect(self._networkAccessibleChanged)
         self.urlChanged.connect(self._urlChanged)
         self.loadStarted.connect(self._loadStarted)
         self.loadFinished.connect(self._loadFinished)
         self.linkClicked.connect(self._linkClicked)
         self.page().featurePermissionRequested.connect(self.permissionRequested)
         self.addActions()
+
+    def _networkAccessibleChanged(self, accessible):
+        print(datetime.datetime.now(), "_networkAccessibleChanged: ", accessible)
 
     def permissionRequested(self, frame, feature):
         self.page().setFeaturePermission(frame, feature, QWebPage.PermissionGrantedByUser)
