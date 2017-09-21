@@ -5,12 +5,11 @@ from scudcloud.resources import Resources
 import sys, subprocess, os, json, datetime
 from urllib.parse import parse_qs, urlparse, urlsplit
 
-from PyQt5 import QtWebKit, QtGui, QtCore, QtWidgets
+from PyQt5 import QtWebKit, QtGui, QtCore, QtWidgets, QtNetwork
 from PyQt5.Qt import QApplication, QKeySequence, QTimer
 from PyQt5.QtCore import QBuffer, QByteArray, QUrl
 from PyQt5.QtWebKitWidgets import QWebView, QWebPage
 from PyQt5.QtWebKit import QWebSettings
-from PyQt5.QtNetwork import QNetworkProxy
 
 class Wrapper(QWebView):
 
@@ -41,8 +40,11 @@ class Wrapper(QWebView):
         self.page().featurePermissionRequested.connect(self.permissionRequested)
         self.addActions()
 
-    def _networkAccessibleChanged(self, accessible):
-        print(datetime.datetime.now(), "_networkAccessibleChanged: ", accessible)
+    def _networkAccessibleChanged(self, status):
+        print(datetime.datetime.now(), "_networkAccessibleChanged: ", status)
+        if status == QtNetwork.QNetworkAccessManager.Accessible:
+            return
+        self.page().networkAccessManager().setConfiguration(QtNetwork.QNetworkConfigurationManager().defaultConfiguration())
 
     def permissionRequested(self, frame, feature):
         self.page().setFeaturePermission(frame, feature, QWebPage.PermissionGrantedByUser)
@@ -56,12 +58,12 @@ class Wrapper(QWebView):
         url_decode = unquote(url)
         proxy = urlparse(url_decode)
         if proxy.hostname is not None and proxy.port is not None:
-            q_network_proxy = QNetworkProxy(QNetworkProxy.HttpProxy, proxy.hostname, proxy.port)
+            q_network_proxy = QtNetwork.QNetworkProxy(QtNetwork.QNetworkProxy.HttpProxy, proxy.hostname, proxy.port)
             if proxy.username is not None:
                 q_network_proxy.setUser(proxy.username)
             if proxy.password is not None:
                 q_network_proxy.setPassword(proxy.password)
-            QNetworkProxy.setApplicationProxy(q_network_proxy)
+            QtNetwork.QNetworkProxy.setApplicationProxy(q_network_proxy)
 
     def addActions(self):
         self.pageAction(QWebPage.Undo).setShortcuts(QKeySequence.Undo)
